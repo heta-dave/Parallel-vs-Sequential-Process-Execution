@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Process Splitting & Execution Simulation</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+            },
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/inter-ui/3.19.3/inter.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Header -->
+    <header class="mb-10 text-center">
+      <h1 class="text-4xl font-bold text-gray-800 mb-2">Parallel vs Sequential Execution</h1>
+      <p class="text-gray-600 max-w-3xl mx-auto">This simulation demonstrates the performance difference between parallel and sequential task execution</p>
+    </header>
+    
+    <!-- Control Panel -->
+    <div class="bg-white shadow-md rounded-lg mb-8 p-6">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">Simulation Controls</h2>
+      <div class="flex flex-wrap gap-3 justify-center">
+        <button id="splitBtn" class="px-5 py-2.5 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition duration-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Split Process into Threads
+        </button>
+        <button id="parallelBtn" class="px-5 py-2.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Simulate Parallel
+        </button>
+        <button id="sequentialBtn" class="px-5 py-2.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition duration-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+          Simulate Sequential
+        </button>
+        <button id="resetBtn" class="px-5 py-2.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Reset
+        </button>
+      </div>
+    </div>
+    
+    <!-- Simulation Panels -->
+    <div class="grid lg:grid-cols-2 gap-6 mb-8">
+      <!-- Parallel Panel -->
+      <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="border-b border-gray-200 bg-gray-50 p-4">
+          <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Parallel Execution
+          </h2>
+        </div>
+        <div class="p-6">
+          <div id="parallelContainer" class="space-y-5"></div>
+          <div class="mt-6 pt-4 border-t border-gray-100">
+            <p id="parallelResult" class="font-medium text-gray-700">Total Parallel Time: Not Simulated</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sequential Panel -->
+      <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="border-b border-gray-200 bg-gray-50 p-4">
+          <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+            Sequential Execution
+          </h2>
+        </div>
+        <div class="p-6">
+          <div class="mb-6">
+            <label for="sequentialProgress" class="block mb-2 font-medium text-gray-700">Overall Progress:</label>
+            <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+              <div id="sequentialProgressBar" class="bg-purple-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <progress id="sequentialProgress" value="0" max="0" class="hidden"></progress>
+          </div>
+          <div class="pt-4 border-t border-gray-100">
+            <p id="sequentialResult" class="font-medium text-gray-700">Total Sequential Time: Not Simulated</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Information Card -->
+    <div class="bg-blue-50 rounded-lg p-6 border border-blue-100 shadow-sm mb-8">
+      <h3 class="text-lg font-semibold text-blue-800 mb-2">About This Simulation</h3>
+      <p class="text-blue-700">This simulation demonstrates how parallel execution can be more efficient than sequential execution for independent tasks. The process is split into 5 threads with random execution times, and you can observe the difference in total execution time between the two approaches.</p>
+    </div>
+  </div>
+
+  <script>
+    // Data structure for simulated threads.
+    class SimulatedThread {
+      constructor(tid) {
+        this.tid = tid;
+        // Random cycles between 3 and 10 seconds.
+        this.initialCycles = Math.floor(Math.random() * 6) + 3;
+        this.remainingCycles = this.initialCycles;
+      }
+    }
+
+    // Global variables
+    let simulatedThreads = [];
+    let parallelTimers = [];
+    let sequentialTimer = null;
+    let parallelStartTime = null;
+    let sequentialStartTime = null;
+
+    // Get DOM elements.
+    const splitBtn = document.getElementById("splitBtn");
+    const parallelBtn = document.getElementById("parallelBtn");
+    const sequentialBtn = document.getElementById("sequentialBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const parallelContainer = document.getElementById("parallelContainer");
+    const parallelResult = document.getElementById("parallelResult");
+    const sequentialProgress = document.getElementById("sequentialProgress");
+    const sequentialProgressBar = document.getElementById("sequentialProgressBar");
+    const sequentialResult = document.getElementById("sequentialResult");
+
+    // Helper function to create a progress bar for a simulated thread.
+    function createParallelBar(thread) {
+      // Create a container div.
+      const container = document.createElement("div");
+      container.className = "space-y-2";
+      
+      // Label for thread with a badge showing execution time
+      const labelContainer = document.createElement("div");
+      labelContainer.className = "flex items-center";
+      
+      const label = document.createElement("div");
+      label.className = "text-gray-700 font-medium";
+      label.textContent = `Thread ${thread.tid}`;
+      
+      const badge = document.createElement("span");
+      badge.className = "ml-2 bg-primary-100 text-primary-800 text-xs font-medium px-2.5 py-0.5 rounded-full";
+      badge.textContent = `${thread.initialCycles}s`;
+      
+      labelContainer.appendChild(label);
+      labelContainer.appendChild(badge);
+      
+      // Progress bar container
+      const progressContainer = document.createElement("div");
+      progressContainer.className = "w-full bg-gray-200 rounded-full h-3 overflow-hidden";
+      
+      // Progress bar element
+      const progressBarElement = document.createElement("div");
+      progressBarElement.className = "bg-primary-600 h-3 rounded-full transition-all duration-500";
+      progressBarElement.style.width = "0%";
+      
+      // Hidden HTML progress for tracking
+      const progressBar = document.createElement("progress");
+      progressBar.className = "hidden";
+      progressBar.max = thread.initialCycles;
+      progressBar.value = 0;
+      
+      progressContainer.appendChild(progressBarElement);
+      
+      container.appendChild(labelContainer);
+      container.appendChild(progressContainer);
+      container.appendChild(progressBar);
+      
+      // Append container to parallel panel.
+      parallelContainer.appendChild(container);
+      
+      // Return both elements for updates
+      return { 
+        progress: progressBar, 
+        visualBar: progressBarElement 
+      };
+    }
+
+    // Reset simulation variables and UI.
+    function resetSimulation() {
+      // Clear timers.
+      parallelTimers.forEach(timer => clearInterval(timer));
+      if (sequentialTimer) clearInterval(sequentialTimer);
+      parallelTimers = [];
+      sequentialTimer = null;
+      simulatedThreads = [];
+      parallelContainer.innerHTML = "";
+      sequentialProgress.value = 0;
+      sequentialProgress.max = 0;
+      sequentialProgressBar.style.width = "0%";
+      parallelResult.textContent = "Total Parallel Time: Not Simulated";
+      sequentialResult.textContent = "Total Sequential Time: Not Simulated";
+      splitBtn.disabled = false;
+      parallelBtn.disabled = true;
+      sequentialBtn.disabled = true;
+      resetBtn.disabled = true;
+    }
+
+    // Split the process into threads.
+    function splitProcess() {
+      resetSimulation();
+      const numThreads = 5;
+      for (let i = 0; i < numThreads; i++) {
+        const thread = new SimulatedThread(i);
+        simulatedThreads.push(thread);
+      }
+      // Create progress bars for each simulated thread.
+      simulatedThreads.forEach(thread => {
+        const bars = createParallelBar(thread);
+        thread.progressBar = bars.progress;
+        thread.visualBar = bars.visualBar;
+      });
+      // Set sequential progress max.
+      const totalCycles = simulatedThreads.reduce((sum, t) => sum + t.initialCycles, 0);
+      sequentialProgress.max = totalCycles;
+      // Enable simulation buttons.
+      splitBtn.disabled = true;
+      parallelBtn.disabled = false;
+      sequentialBtn.disabled = false;
+      resetBtn.disabled = false;
+    }
+
+    // Simulate parallel execution.
+    function simulateParallel() {
+      // Reset each thread's remaining cycles and progress.
+      simulatedThreads.forEach(thread => {
+        thread.remainingCycles = thread.initialCycles;
+        thread.progressBar.value = 0;
+        thread.visualBar.style.width = "0%";
+      });
+      parallelStartTime = Date.now();
+
+      // For each thread, run an interval timer that simulates processing.
+      simulatedThreads.forEach(thread => {
+        const timer = setInterval(() => {
+          if (thread.remainingCycles > 0) {
+            thread.remainingCycles--;
+            thread.progressBar.value = thread.initialCycles - thread.remainingCycles;
+            const percentage = (thread.progressBar.value / thread.initialCycles) * 100;
+            thread.visualBar.style.width = `${percentage}%`;
+          } else {
+            clearInterval(timer);
+          }
+          // Check if all threads are complete.
+          if (simulatedThreads.every(t => t.remainingCycles === 0)) {
+            const totalTime = (Date.now() - parallelStartTime) / 1000;
+            parallelResult.textContent = `Total Parallel Time: ${totalTime.toFixed(1)} seconds`;
+            parallelBtn.disabled = true;
+          }
+        }, 1000);
+        parallelTimers.push(timer);
+      });
+    }
+
+    // Simulate sequential execution.
+    function simulateSequential() {
+      // Create a copy of the initial cycles for sequential simulation.
+      let sequentialTasks = simulatedThreads.map(t => t.initialCycles);
+      sequentialProgress.value = 0;
+      sequentialProgressBar.style.width = "0%";
+      sequentialStartTime = Date.now();
+      function processNext() {
+        if (sequentialTasks.length === 0) {
+          const totalTime = (Date.now() - sequentialStartTime) / 1000;
+          sequentialResult.textContent = `Total Sequential Time: ${totalTime.toFixed(1)} seconds`;
+          sequentialBtn.disabled = true;
+          return;
+        }
+        // Process the first thread completely.
+        let currentCycle = sequentialTasks.shift();
+        const interval = setInterval(() => {
+          if (currentCycle > 0) {
+            currentCycle--;
+            sequentialProgress.value++;
+            const percentage = (sequentialProgress.value / sequentialProgress.max) * 100;
+            sequentialProgressBar.style.width = `${percentage}%`;
+          } else {
+            clearInterval(interval);
+            processNext(); // Process next thread
+          }
+        }, 1000);
+      }
+      processNext();
+    }
+
+    // Attach event listeners.
+    splitBtn.addEventListener("click", splitProcess);
+    parallelBtn.addEventListener("click", simulateParallel);
+    sequentialBtn.addEventListener("click", simulateSequential);
+    resetBtn.addEventListener("click", resetSimulation);
+
+    // Initialize simulation on page load.
+    resetSimulation();
+  </script>
+</body>
+</html>
